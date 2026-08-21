@@ -9,19 +9,92 @@ Current local strategy:
 - The repository is cloned under the user's WSL home-side development area.
 - Go SDK is installed directly in WSL Ubuntu.
 - Neo4j Community Edition is installed directly in WSL Ubuntu.
-- VS Code connects to this repository through WSL.
-- Go development extensions and tools are installed for the WSL environment.
+- VS Code will connect to this repository through WSL.
+- Go development extensions and tools will be installed for the WSL environment.
 - Docker is not required for normal local development.
 - Docker is used later for deployment packaging.
 - AWS runtime uses Docker Compose for the Go app and Neo4j together.
 
-Current repository:
+Current confirmed environment:
 
 ```bash
+Repository path: /home/hchjeong/IntelliJProjects/go-with-neo4j
 git@github.com:HCHJEONG/go-with-neo4j.git
+Ubuntu: 22.04.5 LTS on WSL2
+Git: 2.34.1
+Go: 1.27.0
+Docker Engine: 29.5.2
+Docker Compose: v5.1.4
+Neo4j: 2026.07.1
+cypher-shell: 2026.07.1
+Java: OpenJDK 21, used for local Neo4j runtime only
+VS Code Remote: WSL Ubuntu-22.04
+gopls: v0.23.0
+dlv: 1.27.1
+goimports: installed
+staticcheck: 2026.2 (0.8.0)
+air: 1.67.4
 ```
 
-Setup order:
+Completed setup:
+
+1. Repository cloned under the WSL filesystem.
+2. Git remote confirmed.
+3. Go SDK installed manually from the official Linux tarball into `/usr/local/go`.
+4. Go module initialized at the repository root:
+
+```bash
+go mod init github.com/HCHJEONG/go-with-neo4j
+```
+
+5. Docker Engine and Docker Compose verified for future deployment packaging:
+
+```bash
+docker version
+docker compose version
+docker run --rm hello-world
+```
+
+6. Neo4j apt repository added manually.
+7. Neo4j Community Edition and `cypher-shell` installed through apt.
+8. Neo4j started locally with:
+
+```bash
+sudo neo4j console
+```
+
+9. Local Bolt connectivity verified with `cypher-shell`.
+10. `RETURN 1;` query succeeded.
+11. VS Code opened against WSL Ubuntu-22.04.
+12. Go VS Code extension installed and `gopls` language server is running.
+13. Go development tools installed and verified:
+
+```bash
+gopls version
+dlv version
+goimports -help
+staticcheck -version
+air -v
+```
+
+Remaining setup:
+
+1. Confirm `/usr/local/go/bin` and `$HOME/go/bin` are permanently available in
+   shell `PATH`.
+2. Install or enable VS Code Docker and YAML extensions if not already enabled.
+3. Confirm VS Code uses the WSL Go toolchain from its integrated terminal.
+4. Open the repository from WSL when needed with:
+
+```bash
+code .
+```
+
+5. Create `.env.example` and local `.env` after config keys are finalized.
+6. Create the basic project structure.
+7. Implement local Neo4j readiness check from Go.
+8. Later, add Dockerfile and AWS Docker Compose deployment files.
+
+Reference setup order:
 
 1. Confirm the repository path under WSL.
 2. Confirm Git remote.
