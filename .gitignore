@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+
+bin/
+tmp/
+dist/
+coverage.out
+
+datasets/generated/
+!datasets/generated/.gitkeep
+
+.air.toml.tmp

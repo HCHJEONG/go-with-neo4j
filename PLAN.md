@@ -250,22 +250,110 @@ staticcheck 2026.2 (0.8.0)
 air 1.67.4
 ```
 
+14. Permanent Go PATH configuration verified from WSL:
+
+```bash
+grep -n '/usr/local/go/bin' ~/.bashrc
+grep -n '$HOME/go/bin' ~/.bashrc
+which go
+which gopls
+which dlv
+which goimports
+which staticcheck
+which air
+go version
+```
+
+Confirmed:
+
+```text
+~/.bashrc contains: export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
+/usr/local/go/bin/go
+/home/hchjeong/go/bin/gopls
+/home/hchjeong/go/bin/dlv
+/home/hchjeong/go/bin/goimports
+/home/hchjeong/go/bin/staticcheck
+/home/hchjeong/go/bin/air
+go version go1.27.0 linux/amd64
+```
+
+15. Neo4j Go driver dependency was added manually after Phase 1A:
+
+```bash
+go get github.com/neo4j/neo4j-go-driver/v5
+```
+
+Current repository state after checking `go.mod`, `go.sum`, and `go list -m all`:
+
+```text
+go.mod contains github.com/neo4j/neo4j-go-driver/v5 v5.28.4 // indirect.
+go.sum contains checksums for github.com/neo4j/neo4j-go-driver/v5 v5.28.4.
+go list -m all shows github.com/neo4j/neo4j-go-driver/v5 v5.28.4.
+```
+
+The dependency is currently marked indirect because the application code has not
+imported it yet. Phase 1B should implement the readiness check and then run
+`go mod tidy`, which should make the dependency direct if it is imported by
+production code.
+
+16. Phase 1B Neo4j readiness code was added manually in VS Code.
+
+Files edited:
+
+```text
+internal/graph/neo4j.go
+cmd/gograph/main.go
+```
+
+The graph package now creates a Neo4j driver with context, applies a timeout,
+calls `VerifyConnectivity`, and returns wrapped errors. The application entry
+point now loads config and calls the readiness check.
+
+17. Phase 1B module cleanup, formatting, and tests were run manually:
+
+```bash
+go mod tidy
+goimports -w cmd internal
+go test ./...
+```
+
+Confirmed:
+
+```text
+github.com/neo4j/neo4j-go-driver/v5 v5.28.4 is now a direct dependency.
+go test ./... passed.
+```
+
+18. Phase 1B application run was verified manually with local `.env` loaded:
+
+```bash
+set -a
+. ./.env
+set +a
+go run ./cmd/gograph
+```
+
+Confirmed:
+
+```text
+INFO gograph configuration loaded
+INFO neo4j connectivity healthy
+```
+
 Remaining setup:
 
-1. Confirm `/usr/local/go/bin` and `$HOME/go/bin` are permanently available in
-   shell `PATH`.
-2. Install or enable VS Code Docker and YAML extensions if not already enabled.
-3. Confirm VS Code uses the WSL Go toolchain from its integrated terminal.
-4. Open the repository from WSL when needed with:
+1. Install or enable VS Code Docker and YAML extensions if not already enabled.
+2. Confirm VS Code uses the WSL Go toolchain from its integrated terminal.
+3. Open the repository from WSL when needed with:
 
 ```bash
 code .
 ```
 
-5. Create `.env.example` and local `.env` after config keys are finalized.
-6. Create the basic project structure.
-7. Implement local Neo4j readiness check from Go.
-8. Later, add Dockerfile and AWS Docker Compose deployment files.
+4. Create local `.env` from `.env.example`.
+5. Implement local Neo4j readiness check from Go and finalize the Neo4j driver
+   dependency in `go.mod`.
+6. Later, add Dockerfile and AWS Docker Compose deployment files.
 
 Reference setup order:
 
@@ -943,19 +1031,27 @@ Tasks:
 - Check local Neo4j installation.
 - Check `cypher-shell`.
 - Check development tools if present: Air, gopls, Delve, goimports, Staticcheck.
+- Check Docker and Docker Compose for later deployment packaging.
 - Separate installed, missing, and broken tools.
 
 Completion criteria:
 
 ```bash
 go version
+gopls version
+dlv version
+goimports -help
+staticcheck -version
+air -v
 git --version
 java -version
 neo4j --version
 cypher-shell --version
+docker version
+docker compose version
 ```
 
-All must work, or Codex must clearly report the blocker.
+Status: completed manually. All listed tools have been verified.
 
 Do not install system packages without user approval.
 
@@ -963,7 +1059,7 @@ Do not install system packages without user approval.
 
 Scope is intentionally small.
 
-Tasks:
+Phase 1A tasks before adding the Neo4j Go driver:
 
 - Initialize Go module with `github.com/HCHJEONG/go-with-neo4j`.
 - Create the initial repository structure.
@@ -973,10 +1069,26 @@ Tasks:
 - Start local Neo4j directly in WSL.
 - Implement configuration loading.
 - Implement a minimal app entrypoint.
-- Connect to Neo4j from Go.
-- Implement readiness check.
 - Add basic tests for config validation.
 - Write README local setup instructions.
+
+Phase 1A status: implemented. The app currently validates configuration and
+logs that the Neo4j readiness check is pending manual driver dependency
+installation.
+
+Manual step before Phase 1B:
+
+```bash
+go get github.com/neo4j/neo4j-go-driver/v5
+go mod tidy
+```
+
+Phase 1B tasks after the manual driver dependency step:
+
+- Connect to Neo4j from Go.
+- Implement timeout-bound readiness check.
+- Update tests for readiness behavior where practical.
+- Update README with the final Phase 1 run command.
 
 Do not implement:
 
@@ -998,7 +1110,11 @@ go run ./cmd/gograph
 go test ./...
 ```
 
-The app must log that Neo4j connectivity is healthy.
+Phase 1A completion: `go test ./...` passes and `go run ./cmd/gograph` loads
+configuration with environment variables supplied.
+
+Full Phase 1 completion after Phase 1B: the app must log that Neo4j connectivity
+is healthy.
 
 ### Phase 2. Graph Schema And Persistence
 
