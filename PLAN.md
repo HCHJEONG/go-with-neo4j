@@ -1118,21 +1118,111 @@ is healthy.
 
 ### Phase 2. Graph Schema And Persistence
 
-Tasks:
+Goal:
+
+Create the first durable graph model in Neo4j and prove that the application can
+initialize schema, save a minimal incident with evidence messages, and read it
+back.
+
+Scope rules:
+
+- Keep Phase 2 focused on deterministic Go code and fixed Cypher templates.
+- Do not implement parser, synthetic generator, SSH commands, search ranking, or
+  LLM extraction in this phase.
+- Do not let generated text or user input become raw Cypher.
+- Use Cypher parameters for all values.
+- Schema initialization must be safe to run repeatedly.
+- Use local WSL Neo4j, not Docker Compose.
+
+Phase 2A. Schema initialization:
 
 - Add idempotent schema initialization.
-- Add uniqueness constraints.
-- Add full-text index.
-- Add vector index.
-- Persist and load incidents.
-- Persist message evidence.
-- Add Neo4j integration tests.
+- Create uniqueness constraints for initial node IDs.
+- Create useful indexes for `Message.contentHash`, incident status/type, and
+  message timestamps.
+- Create full-text index for incident summaries and message text if supported by
+  the installed Neo4j version.
+- Create vector index for incident embeddings with configured dimensions.
+- Keep migration/init code explicit and inspectable.
+
+Initial constraints:
+
+```text
+Message.id
+Actor.id
+Incident.id
+Asset.id
+Order.id
+Product.id
+Location.id
+Issue.id
+Action.id
+```
+
+Initial indexes:
+
+```text
+Message.contentHash
+Message.sentAt
+Incident.type
+Incident.status
+Incident.startedAt
+```
+
+Phase 2B. Minimal domain types:
+
+- Add Go structs for `Message`, `Incident`, and `EvidenceRef`.
+- Keep fields aligned with the planned graph model.
+- Do not introduce broad repository interfaces yet.
+- Prefer a concrete Neo4j store type such as `graph.Store`.
+
+Phase 2C. Persistence:
+
+- Save a minimal incident.
+- Save evidence messages.
+- Link messages to incidents with `(:Message)-[:PART_OF]->(:Incident)`.
+- Save actor/message relation if actor is provided.
+- Read an incident by ID.
+- Read evidence messages for an incident.
+- Make repeated save behavior deterministic.
+
+Phase 2D. Tests:
+
+- Add integration tests that use the local Neo4j instance only when explicitly
+  enabled.
+- Skip integration tests by default if required env vars are missing.
+- Use a test label or test ID prefix so manual cleanup is easy.
+- Verify schema initialization can run twice.
+- Verify a test incident can be saved and read.
+- Verify evidence messages can be traversed from incident.
+
+Suggested integration-test environment:
+
+```bash
+GOGRAPH_INTEGRATION_TESTS=1
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=<local-password>
+```
+
+Suggested commands:
+
+```bash
+set -a
+. ./.env
+set +a
+go test ./...
+GOGRAPH_INTEGRATION_TESTS=1 go test ./internal/graph -run Integration
+```
 
 Completion criteria:
 
-- Test incident can be saved and read.
-- Evidence messages can be traversed from incident.
 - Schema initialization can run repeatedly.
+- A test incident can be saved and read.
+- Evidence messages can be traversed from incident.
+- `go test ./...` passes without requiring Neo4j.
+- Integration tests pass when explicitly enabled against local Neo4j.
+- README documents how to run Phase 2 schema and integration checks.
 
 ### Phase 3. Message Parser
 
