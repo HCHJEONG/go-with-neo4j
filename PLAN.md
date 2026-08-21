@@ -77,6 +77,179 @@ staticcheck -version
 air -v
 ```
 
+Manual setup record:
+
+The following steps were performed manually by the developer during initial
+environment setup. This record intentionally describes the successful path only.
+
+1. Confirmed the repository location and remote:
+
+```bash
+cd ~/IntelliJProjects/go-with-neo4j
+pwd
+git remote -v
+```
+
+Confirmed:
+
+```text
+/home/hchjeong/IntelliJProjects/go-with-neo4j
+origin git@github.com:HCHJEONG/go-with-neo4j.git
+```
+
+2. Installed Go SDK manually from the official tarball:
+
+```bash
+cd /tmp
+wget https://go.dev/dl/go1.27.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.27.0.linux-amd64.tar.gz
+```
+
+3. Added Go binaries to the shell path for the current shell:
+
+```bash
+export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"
+```
+
+The permanent shell configuration still needs to be confirmed.
+
+4. Initialized the Go module from the repository root:
+
+```bash
+cd ~/IntelliJProjects/go-with-neo4j
+go mod init github.com/HCHJEONG/go-with-neo4j
+cat go.mod
+```
+
+Confirmed:
+
+```go
+module github.com/HCHJEONG/go-with-neo4j
+
+go 1.27.0
+```
+
+5. Verified Docker for later deployment packaging:
+
+```bash
+docker version
+docker compose version
+docker run --rm hello-world
+```
+
+Confirmed:
+
+```text
+Docker Engine 29.5.2
+Docker Compose v5.1.4
+hello-world succeeded
+```
+
+6. Added the Neo4j apt repository and installed Neo4j manually:
+
+```bash
+wget -O - https://debian.neo4j.com/neotechnology.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/neo4j.gpg
+echo "deb [signed-by=/usr/share/keyrings/neo4j.gpg] https://debian.neo4j.com stable latest" | sudo tee /etc/apt/sources.list.d/neo4j.list
+sudo apt update
+sudo apt install neo4j
+```
+
+The Neo4j package installed `neo4j`, `cypher-shell`, and the Java runtime needed
+by local Neo4j.
+
+7. Verified Neo4j command-line tools:
+
+```bash
+neo4j --version
+cypher-shell --version
+```
+
+Confirmed:
+
+```text
+Neo4j 2026.07.1
+Cypher-Shell 2026.07.1
+```
+
+8. Started local Neo4j manually:
+
+```bash
+sudo neo4j console
+```
+
+Confirmed from Neo4j logs:
+
+```text
+Bolt enabled on localhost:7687
+HTTP enabled on localhost:7474
+Started
+```
+
+9. Verified local Neo4j connectivity from a second terminal:
+
+```bash
+cypher-shell -a neo4j://localhost:7687 -u neo4j -p neo4j
+```
+
+The first successful login required changing the default password. The new
+password must be kept out of Git and later placed only in local `.env`.
+
+10. Verified Cypher execution:
+
+```cypher
+RETURN 1;
+:exit
+```
+
+Confirmed:
+
+```text
+1 row
+```
+
+11. Opened the repository in VS Code through WSL and installed the Go extension.
+
+Confirmed:
+
+```text
+VS Code Remote: WSL Ubuntu-22.04
+Go extension active
+GOPATH=/home/hchjeong/go
+GOBIN=/home/hchjeong/go/bin
+gopls language server running
+```
+
+12. Installed and verified Go development tools:
+
+```bash
+go install github.com/air-verse/air@latest
+go install golang.org/x/tools/cmd/goimports@latest
+go install honnef.co/go/tools/cmd/staticcheck@latest
+```
+
+`gopls` and `dlv` were installed through the VS Code Go tooling flow.
+
+Verification:
+
+```bash
+gopls version
+dlv version
+goimports -help
+staticcheck -version
+air -v
+```
+
+Confirmed:
+
+```text
+gopls v0.23.0
+dlv 1.27.1
+goimports installed
+staticcheck 2026.2 (0.8.0)
+air 1.67.4
+```
+
 Remaining setup:
 
 1. Confirm `/usr/local/go/bin` and `$HOME/go/bin` are permanently available in
